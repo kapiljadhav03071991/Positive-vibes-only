@@ -206,6 +206,7 @@
             line-height: 1.6;
             box-shadow: 0 10px 25px rgba(240, 147, 251, 0.3);
             animation: slideIn 0.5s ease-out;
+            transition: all 0.3s ease;
         }
         
         @keyframes slideIn {
@@ -305,8 +306,121 @@
 
     <script>
         let userName = '';
+        let usedHypes = new Set();
         
-        const hypeMessages = [
+        // Hype templates for dynamic generation
+        const hypeTemplates = [
+            "You're absolutely {adjective} and {statement}!",
+            "Your {quality} {verb} every {place} you {action}!",
+            "You have the {ability} to {achievement}!",
+            "You're a {metaphor} and {outcome}!",
+            "Your {trait} can {impact}!",
+            "You {verb} {quality} and {trait} wherever you go!",
+            "You're {comparative} than you {knowledge} and {comparative2} than you {feeling}!",
+            "You {action} the {superlative} in everyone around you!",
+            "You're exactly where you need to be in your {journey}!",
+            "Your {potential} is {limitless} and your {future} is {bright}!",
+            "You {inspire} others just by being {authentically} you!",
+            "You're a {rarity} in this {world}!",
+            "Your {presence} makes everything {better}!",
+            "You have a {beautiful} {soul} that {shines} through everything you do!",
+            "You're {capable} of {extraordinary} things!",
+            "You deserve all the {love} and {success} coming your way!",
+            "You're a walking {miracle} and you should {celebrate} that!",
+            "Your {kindness} makes the world a {better} place!",
+            "You have an {amazing} ability to {overcome} any {challenge}!",
+            "You're living proof that {dreams} do come true!"
+        ];
+        
+        // Word banks for generating positive messages
+        const wordBanks = {
+            adjective: ["incredible", "amazing", "extraordinary", "phenomenal", "outstanding", "remarkable", "brilliant", "magnificent", "wonderful", "fantastic", "spectacular", "marvelous", "exceptional", "stunning", "breathtaking", "inspiring", "uplifting", "radiant", "glowing", "dazzling"],
+            
+            statement: ["the world is lucky to have you", "you light up every room", "you make everything better", "you inspire everyone around you", "you have unlimited potential", "you're destined for greatness", "you're a gift to this world", "you bring joy wherever you go", "you're exactly who you're meant to be", "you're writing an incredible story"],
+            
+            quality: ["energy", "smile", "presence", "spirit", "aura", "vibe", "personality", "essence", "soul", "heart", "mind", "creativity", "passion", "determination", "kindness", "wisdom", "strength", "courage", "authenticity", "positivity"],
+            
+            verb: ["lights up", "brightens", "transforms", "elevates", "enriches", "illuminates", "energizes", "inspires", "uplifts", "radiates", "emanates", "spreads", "creates", "generates", "attracts", "magnetizes", "captivates", "enchants", "empowers", "motivates"],
+            
+            place: ["room", "space", "environment", "area", "atmosphere", "setting", "scene", "moment", "situation", "gathering", "crowd", "circle", "community", "world", "universe", "dimension", "realm", "sphere", "domain", "territory"],
+            
+            action: ["walk into", "enter", "step into", "arrive at", "appear in", "grace with your presence", "visit", "explore", "discover", "experience", "encounter", "embrace", "approach", "engage with", "connect with", "interact with", "participate in", "contribute to", "enhance", "bless"],
+            
+            ability: ["power", "strength", "capacity", "potential", "talent", "gift", "skill", "capability", "magic", "superpower", "energy", "force", "drive", "determination", "willpower", "spirit", "courage", "wisdom", "insight", "intuition"],
+            
+            achievement: ["achieve anything you set your mind to", "overcome any obstacle", "reach any goal", "make your dreams come true", "create positive change", "inspire others", "make a difference", "leave a lasting impact", "build something amazing", "transform lives", "spread joy and love", "create beautiful moments", "achieve the impossible", "break through barriers", "reach new heights"],
+            
+            metaphor: ["masterpiece in progress", "shining star", "beacon of light", "ray of sunshine", "breath of fresh air", "diamond in the rough", "rare gem", "work of art", "miracle walking", "gift to humanity", "source of inspiration", "fountain of positivity", "tower of strength", "ocean of possibilities", "garden of potential"],
+            
+            outcome: ["you're doing amazing", "you're absolutely perfect", "you're destined for success", "you inspire everyone", "you make the world better", "you're exactly enough", "you're incredibly special", "you're one of a kind", "you're absolutely brilliant", "you're pure magic"],
+            
+            trait: ["positivity", "confidence", "kindness", "compassion", "wisdom", "strength", "courage", "authenticity", "creativity", "passion", "determination", "resilience", "grace", "elegance", "charm", "charisma", "warmth", "love", "joy", "peace"],
+            
+            impact: ["change someone's entire day", "heal broken hearts", "inspire great things", "create miracles", "spread happiness", "bring peace", "generate hope", "build bridges", "light up darkness", "create beautiful connections", "spark joy", "ignite passion", "cultivate love", "nurture dreams", "foster growth"],
+            
+            comparative: ["stronger", "braver", "wiser", "kinder", "more capable", "more resilient", "more amazing", "more beautiful", "more talented", "more inspiring", "more powerful", "more magical", "more wonderful", "more extraordinary", "more phenomenal"],
+            
+            knowledge: ["know", "realize", "understand", "believe", "think", "imagine", "perceive", "recognize", "acknowledge", "see"],
+            
+            comparative2: ["braver", "more capable", "more amazing", "more resilient", "stronger", "wiser", "more powerful", "more beautiful", "more inspiring", "more magical"],
+            
+            feeling: ["feel", "sense", "experience", "perceive", "understand", "believe", "think", "imagine", "realize", "know"],
+            
+            superlative: ["best", "greatest", "most beautiful", "most amazing", "most wonderful", "brightest", "most inspiring", "most magical", "most extraordinary", "most phenomenal"],
+            
+            journey: ["journey", "path", "adventure", "story", "life", "experience", "growth", "evolution", "transformation", "development"],
+            
+            potential: ["potential", "future", "destiny", "possibilities", "opportunities", "dreams", "aspirations", "goals", "vision", "purpose"],
+            
+            limitless: ["limitless", "boundless", "infinite", "endless", "unlimited", "vast", "immense", "extraordinary", "incredible", "amazing"],
+            
+            future: ["future", "destiny", "tomorrow", "path ahead", "journey", "adventure", "story", "life", "dreams", "goals"],
+            
+            bright: ["bright", "brilliant", "radiant", "glowing", "shining", "luminous", "dazzling", "sparkling", "magnificent", "beautiful"],
+            
+            inspire: ["inspire", "motivate", "encourage", "uplift", "empower", "energize", "ignite", "spark", "awaken", "activate"],
+            
+            authentically: ["authentically", "genuinely", "truly", "purely", "completely", "wholly", "entirely", "perfectly", "beautifully", "wonderfully"],
+            
+            rarity: ["rare gem", "precious diamond", "unique treasure", "special gift", "beautiful miracle", "extraordinary blessing", "amazing wonder", "incredible phenomenon", "magical being", "divine creation"],
+            
+            world: ["world", "universe", "reality", "existence", "life", "humanity", "society", "community", "planet", "cosmos"],
+            
+            presence: ["presence", "energy", "spirit", "aura", "essence", "being", "soul", "heart", "vibe", "radiance"],
+            
+            better: ["better", "brighter", "more beautiful", "more wonderful", "more amazing", "more magical", "more special", "more extraordinary", "more incredible", "more phenomenal"],
+            
+            beautiful: ["beautiful", "magnificent", "gorgeous", "stunning", "radiant", "glowing", "shining", "brilliant", "dazzling", "breathtaking"],
+            
+            soul: ["soul", "heart", "spirit", "essence", "being", "energy", "aura", "presence", "light", "core"],
+            
+            shines: ["shines", "glows", "radiates", "emanates", "sparkles", "illuminates", "brightens", "lights up", "beams", "dazzles"],
+            
+            capable: ["capable", "able", "powerful", "strong", "equipped", "ready", "prepared", "destined", "meant", "born"],
+            
+            extraordinary: ["extraordinary", "incredible", "amazing", "phenomenal", "remarkable", "outstanding", "exceptional", "spectacular", "magnificent", "brilliant"],
+            
+            love: ["love", "joy", "happiness", "success", "abundance", "prosperity", "peace", "fulfillment", "contentment", "bliss"],
+            
+            success: ["success", "achievement", "accomplishment", "victory", "triumph", "prosperity", "abundance", "fulfillment", "happiness", "joy"],
+            
+            miracle: ["miracle", "blessing", "gift", "wonder", "phenomenon", "treasure", "gem", "diamond", "star", "light"],
+            
+            celebrate: ["celebrate", "honor", "cherish", "embrace", "acknowledge", "recognize", "appreciate", "treasure", "value", "love"],
+            
+            kindness: ["kindness", "compassion", "love", "warmth", "generosity", "caring", "empathy", "understanding", "gentleness", "goodness"],
+            
+            amazing: ["amazing", "incredible", "extraordinary", "phenomenal", "remarkable", "outstanding", "exceptional", "spectacular", "magnificent", "brilliant"],
+            
+            overcome: ["overcome", "conquer", "defeat", "triumph over", "rise above", "surpass", "transcend", "break through", "push past", "move beyond"],
+            
+            challenge: ["challenge", "obstacle", "difficulty", "barrier", "setback", "hurdle", "problem", "limitation", "restriction", "boundary"],
+            
+            dreams: ["dreams", "aspirations", "goals", "visions", "hopes", "desires", "wishes", "ambitions", "purposes", "callings"]
+        };
+        
+        // Static positive messages for variety
+        const staticHypes = [
             "You're absolutely incredible and the world is lucky to have you!",
             "Your energy lights up every room you walk into!",
             "You have the power to achieve anything you set your mind to!",
@@ -326,18 +440,54 @@
             "You're a walking miracle and you should celebrate that!",
             "Your kindness makes the world a better place!",
             "You have an amazing ability to overcome any challenge!",
-            "You're living proof that dreams do come true!",
-            "Your positive energy is contagious and powerful!",
-            "You're absolutely unstoppable when you believe in yourself!",
-            "You have a gift for making others feel special!",
-            "You're writing an incredible story with your life!",
-            "You deserve to be celebrated every single day!",
-            "Your determination is inspiring to everyone who knows you!",
-            "You have the most beautiful way of seeing the world!",
-            "You're proof that amazing people do exist!",
-            "Your heart is pure gold and it shows!",
-            "You're destined for greatness!"
+            "You're living proof that dreams do come true!"
         ];
+        
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+        
+        function generateDynamicHype() {
+            const template = getRandomElement(hypeTemplates);
+            let hype = template;
+            
+            // Replace placeholders with random words
+            Object.keys(wordBanks).forEach(category => {
+                const placeholder = `{${category}}`;
+                if (hype.includes(placeholder)) {
+                    hype = hype.replace(placeholder, getRandomElement(wordBanks[category]));
+                }
+            });
+            
+            return hype;
+        }
+        
+        function generateUniqueHype() {
+            let hype;
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            do {
+                // Mix of static and dynamic hypes
+                if (Math.random() < 0.3) {
+                    // 30% chance for static hypes
+                    hype = getRandomElement(staticHypes);
+                } else {
+                    // 70% chance for generated hypes
+                    hype = generateDynamicHype();
+                }
+                attempts++;
+            } while (usedHypes.has(hype) && attempts < maxAttempts);
+            
+            // If we've used too many hypes, clear the history
+            if (attempts >= maxAttempts) {
+                usedHypes.clear();
+                hype = generateDynamicHype();
+            }
+            
+            usedHypes.add(hype);
+            return hype;
+        }
         
         function startHyping() {
             const nameInput = document.getElementById('nameInput');
@@ -345,7 +495,7 @@
             
             if (!userName) {
                 nameInput.style.borderColor = '#f56565';
-                nameInput.placeholder = 'Please enter your name first!';
+                nameInput.placeholder = 'Please enter your beautiful name first!';
                 return;
             }
             
@@ -360,7 +510,7 @@
         
         function generateHype() {
             const messageContainer = document.getElementById('messageContainer');
-            const randomMessage = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            const randomMessage = generateUniqueHype();
             
             // Add a small delay for animation
             messageContainer.style.opacity = '0';
@@ -377,10 +527,11 @@
             document.getElementById('hypePage').classList.add('hidden');
             document.getElementById('welcomePage').classList.remove('hidden');
             
-            // Clear the input
+            // Clear the input and reset used hypes
             document.getElementById('nameInput').value = '';
             document.getElementById('nameInput').style.borderColor = '#e2e8f0';
             document.getElementById('nameInput').placeholder = 'Your beautiful name...';
+            usedHypes.clear(); // Reset hype history when going back
         }
         
         // Allow Enter key to submit
